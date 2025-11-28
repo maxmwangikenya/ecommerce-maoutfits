@@ -1,21 +1,23 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
-const PORT = 5500;
-const dotenv = require("dotenv").config();
+const userRoute = require("./Routes/users")
+
+require("dotenv").config(); // Load .env file
 
 
-mongoose.
-connect(process.env.MONGO_URI)
-.then(()=> {console.log("DBsuccessfully connected")})
+app.use("/api/users", userRoute);
+// Connect to MongoDB
+
+mongoose
+.connect(process.env.MONGO_URL)
+.then(() => console.log("DB connected successfull!"))
 .catch((err) => {
-    console.log("err")
+    console.log("DB not connected")
 })
 
-app.get("/api/test", () => {
-    console.log("test is successful")
-})
 
-app.listen(PORT, () =>{
-    console.log(`server successfully running on port ${PORT}`)
-})
+
+app.listen(process.env.PORT || 5000, () => {
+  console.log(`backend server successfully running`);
+});
