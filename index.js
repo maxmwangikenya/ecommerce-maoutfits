@@ -5,6 +5,7 @@ const userRoute = require("./Routes/users")
 
 require("dotenv").config(); // Load .env file
 
+app.use(express.json());
 
 app.use("/api/users", userRoute);
 // Connect to MongoDB

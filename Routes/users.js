@@ -8,6 +8,10 @@ router.get("/", (req, res) => {
 }
 );
 
+router.post("/userposttest", (req, res) => {
+    const username = req.body.username;
+    console.log(username);
+});
 // lh:5500/api/users/usertest
 
 module.exports = router;
