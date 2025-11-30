@@ -5,7 +5,7 @@ const router = express.Router();
 const CryptoJS = require("crypto-js");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const { verifyTokenAndAuthorization } = require("./verifyToken"); // adjust path if needed
+const { verifyTokenAndAuthorization, verifyTokenAndAdmin } = require("./verifyToken");// adjust path if needed
 
 // Register
 router.post("/register", async (req, res) => {
@@ -98,5 +98,65 @@ router.put("/:id", verifyTokenAndAuthorization, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+//Delete
+
+router.delete("/:id", verifyTokenAndAuthorization, async (req,res) => {
+    try{
+      await User.findByIdAndDelete(req.params.id)
+      res.status(200).json("user has been deleted...")
+    }catch(err){
+        res.status(500).json(err)
+    }
+});
+
+// Get user by ID (admin only)
+router.get("/find/:id", verifyTokenAndAdmin, async (req, res) => {
+    try {
+        const userId = req.params.id.trim();
+
+        // Optional: validate ObjectId format
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json("Invalid user ID format!");
+        }
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json("User not found!");
+        }
+
+        const { password, ...others } = user._doc;
+        res.status(200).json(others); 
+    } catch (err) {
+        console.error("Get user error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get all users (admin only)
+router.get("/", verifyTokenAndAdmin, async (req, res) => {
+    const query = req.query.new;
+    
+    try {
+        // If query param 'new' exists, get only the 5 newest users
+        const users = query 
+            ? await User.find().sort({ _id: -1 }).limit(5)
+            : await User.find(); // Changed 'user' to 'User'
+        
+        // Remove passwords from all users
+        const usersWithoutPasswords = users.map(user => {
+            const { password, ...others } = user._doc;
+            return others;
+        });
+        
+        res.status(200).json(usersWithoutPasswords);
+    } catch (err) {
+        console.error("Get all users error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+ 
+// get users stats
 
 module.exports = router;
