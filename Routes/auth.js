@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
@@ -31,7 +32,7 @@ router.post("/login", async (req, res) => {
             return res.status(401).json("Wrong credentials!");
         }
 
-        // Decrypt password
+
         const hashedPassword = CryptoJS.AES.decrypt(
             user.password,
             process.env.PASS_SEC

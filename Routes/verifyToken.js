@@ -1,48 +1,59 @@
-const express = require("express");
-const router = express.Router();
-const { 
+const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
+
+const verifyToken = (req, res, next) => {
+    const authHeader = req.headers.token || req.headers.authorization;
+    
+    if (authHeader) {
+        const token = authHeader.startsWith("Bearer ") 
+            ? authHeader.split(" ")[1] 
+            : authHeader;
+        
+        jwt.verify(token, process.env.JWT_SEC, (err, user) => {
+            if (err) {
+                return res.status(403).json("Token is not valid!");
+            }
+            req.user = user;
+            next();
+        });
+    } else {
+        return res.status(401).json("You are not authenticated!");
+    }
+};
+
+const verifyTokenAndAuthorization = (req, res, next) => {
+    verifyToken(req, res, () => {
+        // 🔥 Trim the ID from params
+        const userId = req.params.id?.trim();
+
+        // Optional: validate format
+        if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json("Invalid user ID");
+        }
+
+        // Compare: both should be strings
+        if (req.user.id === userId || req.user.isAdmin) {
+            // Attach clean ID to req for route use (optional)
+            req.params.id = userId;
+            next();
+        } else {
+            res.status(403).json("You are not allowed to do that!");
+        }
+    });
+};
+
+const verifyTokenAndAdmin = (req, res, next) => {
+    verifyToken(req, res, () => {
+        if (req.user.isAdmin) {
+            next();
+        } else {
+            res.status(403).json("You are not supposed to do that!");
+        }
+    });
+};
+
+module.exports = { 
     verifyToken, 
     verifyTokenAndAuthorization, 
     verifyTokenAndAdmin 
-} = require("../middleware/verifyToken");
-
-// Example 1: Any authenticated user can access
-router.get("/profile", verifyToken, (req, res) => {
-    res.status(200).json({
-        message: "You are authenticated!",
-        userId: req.user.id,
-        isAdmin: req.user.isAdmin
-    });
-});
-
-// Example 2: User can only access their own data
-router.put("/user/:id", verifyTokenAndAuthorization, async (req, res) => {
-    try {
-        // Update user logic here
-        res.status(200).json("User updated successfully!");
-    } catch (err) {
-        res.status(500).json(err);
-    }
-});
-
-// Example 3: Only admins can access
-router.get("/admin/users", verifyTokenAndAdmin, async (req, res) => {
-    try {
-        // Get all users logic here
-        res.status(200).json("All users data");
-    } catch (err) {
-        res.status(500).json(err);
-    }
-});
-
-// Example 4: Delete - user can delete their own data OR admin can delete anyone's
-router.delete("/user/:id", verifyTokenAndAuthorization, async (req, res) => {
-    try {
-        // Delete user logic here
-        res.status(200).json("User deleted successfully!");
-    } catch (err) {
-        res.status(500).json(err);
-    }
-});
-
-module.exports = router;
+};

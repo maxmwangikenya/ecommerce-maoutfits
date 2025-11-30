@@ -6,13 +6,13 @@ const userRoute = require("./Routes/users")
 const authRoute = require("./Routes/auth")
 
 
-require("dotenv").config(); // Load .env file
+require("dotenv").config(); 
 
 app.use(express.json());
 
 app.use("/api/auth", authRoute);
 app.use("/api/users", userRoute);
-// Connect to MongoDB
+
 
 mongoose
 .connect(process.env.MONGO_URL)
